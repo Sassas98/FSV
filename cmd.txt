@@ -1,0 +1,19 @@
+rm -f pan pan.* *.trail
+spin -a leader_ring_naive.pml
+gcc -o pan pan.c
+
+./pan -E -N at_most_one
+./pan -E -N only_max_can_lead
+
+
+
+
+rm -f pan pan.* *.trail
+spin -a leader_ring_refined.pml
+gcc -o pan pan.c
+
+./pan -N at_most_one
+./pan -N only_max_can_lead
+./pan -a -N eventually_some_leader
+./pan -a -N eventually_max
+./pan -a -N leader_persistence
