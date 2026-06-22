@@ -1,6 +1,7 @@
 #define N 7
+#define CAP 1
 
-chan ch[N] = [1] of { byte };
+chan ch[N] = [CAP] of { byte };
 
 byte id[N];
 bool leader[N];
@@ -45,15 +46,16 @@ proctype Node(byte i) {
 }
 
 init {
-    id[0] = 3;
-    id[1] = 7;
-    id[2] = 2;
-    id[3] = 5;
-    id[4] = 1;
-    id[5] = 6;
-    id[6] = 4;
-
     byte i;
+
+    for (i : 0 .. N - 1) {
+        if
+        :: (i % 2 == 0) ->
+            id[i] = (i / 2) + 1
+        :: else ->
+            id[i] = N - (i / 2)
+        fi
+    }
 
     for (i : 0 .. N - 1) {
         leader[i] = false;
