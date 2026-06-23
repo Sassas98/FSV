@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.6//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_6.dtd'>
+<nta>
+	<declaration>const int N = 7;
+const int CAP = 1;
+const int MAX_PID = 1;
+
+typedef int[0, N-1] pid_t;
+typedef int[0, N] msg_t;
+typedef int[0, CAP] size_t;
+
+msg_t id[N] = {1, 7, 2, 5, 3, 4, 6};
+
+bool leader[N];
+int[0, N] leader_count = 0;
+bool wrong_leader = false;
+
+msg_t buffer[N][CAP];
+size_t size[N];
+
+pid_t succ(pid_t i) {
+    return (i + 1) % N;
+}
+
+bool can_receive(pid_t c) {
+    return size[c] &gt; 0;
+}
+
+bool can_send(pid_t c) {
+    return size[c] &lt; CAP;
+}
+
+msg_t front(pid_t c) {
+    return buffer[c][0];
+}
+
+void push(pid_t c, msg_t v) {
+    buffer[c][size[c]] = v;
+    size[c]++;
+}
+
+void pop(pid_t c) {
+    int k;
+
+    k = 0;
+
+    while (k &lt; size[c] - 1) {
+        buffer[c][k] = buffer[c][k + 1];
+        k++;
+    }
+
+    buffer[c][size[c] - 1] = 0;
+    size[c]--;
+}
+
+void forward_msg(pid_t i, msg_t m) {
+    push(succ(i), m);
+    pop(i);
+}
+
+void discard(pid_t i) {
+    pop(i);
+}
+
+void elect(pid_t i) {
+    pop(i);
+
+    if (i != MAX_PID) {
+        wrong_leader = true;
+    }
+
+    leader[i] = true;
+    leader_count++;
+}
+</declaration>
+	<template>
+		<name x="5" y="5">Node</name>
+		<parameter>pid_t i</parameter>
+		<declaration>msg_t msg;</declaration>
+		<location id="id0" x="-518" y="229">
+			<name x="-561" y="238">Init</name>
+			<urgent/>
+		</location>
+		<location id="id1" x="-238" y="195">
+			<name x="-289" y="212">Waiting</name>
+			<urgent/>
+		</location>
+		<location id="id2" x="510" y="-195">
+			<name x="484" y="-178">Done</name>
+		</location>
+		<location id="id3" x="688" y="187">
+			<name x="680" y="204">Read</name>
+			<urgent/>
+		</location>
+		<location id="id4" x="76" y="493">
+			<name x="93" y="493">Send</name>
+			<urgent/>
+		</location>
+		<location id="id5" x="161" y="-25">
+			<name x="144" y="-59">Found</name>
+			<urgent/>
+		</location>
+		<init ref="id0"/>
+		<transition id="id6">
+			<source ref="id5"/>
+			<target ref="id2"/>
+			<nail x="374" y="-136"/>
+		</transition>
+		<transition id="id7">
+			<source ref="id3"/>
+			<target ref="id5"/>
+			<label kind="guard" x="340" y="25">leader_count &gt; 0</label>
+		</transition>
+		<transition id="id8">
+			<source ref="id4"/>
+			<target ref="id5"/>
+			<label kind="guard" x="0" y="76">leader_count &gt; 0</label>
+		</transition>
+		<transition id="id9">
+			<source ref="id2"/>
+			<target ref="id2"/>
+			<nail x="467" y="-238"/>
+			<nail x="518" y="-280"/>
+			<nail x="561" y="-238"/>
+		</transition>
+		<transition id="id10">
+			<source ref="id3"/>
+			<target ref="id2"/>
+			<label kind="guard" x="603" y="-34">msg == id[i]</label>
+			<label kind="assignment" x="612" y="-17">elect(i)</label>
+		</transition>
+		<transition id="id11">
+			<source ref="id1"/>
+			<target ref="id5"/>
+			<label kind="guard" x="-221" y="-42">leader_count &gt; 0</label>
+			<nail x="-229" y="-17"/>
+		</transition>
+		<transition id="id12">
+			<source ref="id3"/>
+			<target ref="id4"/>
+			<label kind="guard" x="314" y="391">leader_count == 0 &amp;&amp; msg &gt; id[i]</label>
+		</transition>
+		<transition id="id13">
+			<source ref="id3"/>
+			<target ref="id1"/>
+			<label kind="guard" x="136" y="246">leader_count == 0 &amp;&amp; msg &lt; id[i]</label>
+			<label kind="assignment" x="212" y="263">discard(i)</label>
+			<nail x="153" y="331"/>
+		</transition>
+		<transition id="id14">
+			<source ref="id4"/>
+			<target ref="id1"/>
+			<label kind="guard" x="-408" y="357">leader_count == 0 &amp;&amp; can_send(succ(i))</label>
+			<label kind="assignment" x="-246" y="374">forward_msg(i, msg)</label>
+		</transition>
+		<transition id="id15">
+			<source ref="id1"/>
+			<target ref="id3"/>
+			<label kind="guard" x="212" y="153">leader_count == 0 &amp;&amp; can_receive(i)</label>
+			<label kind="assignment" x="263" y="170">msg = front(i)</label>
+		</transition>
+		<transition id="id16">
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="guard" x="-433" y="161">can_send(succ(i))</label>
+			<label kind="assignment" x="-450" y="178">push(succ(i), id[i])</label>
+			<nail x="-391" y="212"/>
+		</transition>
+	</template>
+	<system>
+P0 = Node(0);
+P1 = Node(1);
+P2 = Node(2);
+P3 = Node(3);
+P4 = Node(4);
+P5 = Node(5);
+P6 = Node(6);
+
+system P0, P1, P2, P3, P4, P5, P6;</system>
+	<queries>
+		<query>
+			<formula>A[] not deadlock
+</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2026-06-24 01:44:54 +0200">
+			</result>
+		</query>
+		<query>
+			<formula>A[] leader_count &lt;= 1</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2026-06-24 01:44:52 +0200">
+			</result>
+		</query>
+		<query>
+			<formula>A[] !wrong_leader</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2026-06-24 01:44:56 +0200">
+			</result>
+		</query>
+		<query>
+			<formula>A&lt;&gt; leader_count &gt; 0</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2026-06-24 01:44:58 +0200">
+			</result>
+		</query>
+		<query>
+			<formula>A&lt;&gt; leader[MAX_PID]</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2026-06-24 01:45:00 +0200">
+			</result>
+		</query>
+	</queries>
+</nta>
